@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Make Up Online</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link rel="stylesheet" href="style_page.css">
+    <script src="script.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<section id="header">
+    <h1>Make Up Online</h1>
+    <div>
+        <ul id="navbar">
+            <li><a href="html_page.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a class="active" href="cart.html"><i class="fas fa-shopping-cart"></i></a></li>
+            <li><a href="login.html"><i class="fas fa-user"></i></a></li>
+        </ul>
+    </div>
+</section>
+
+<!-- PAGE HEADER -->
+<section id="page-header">
+    <h2>#cart</h2>
+    <p>Your selected products</p>
+</section>
+
+<!-- CART TABLE -->
+<section id="cart" class="section-p1">
+    <table width="100%">
+        <thead>
+            <tr>
+                <td>Remove</td>
+                <td>Image</td>
+                <td>Product</td>
+                <td>Price</td>
+                <td>Quantity</td>
+                <td>Total</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><i class="far fa-times-circle"></i></td>
+                <td><img src="images/eyeliner.jpg" alt=""></td>
+                <td>Eyeliner</td>
+                <td>29.900 dt</td>
+                <td><input type="number" value="1"></td>
+                <td>29.900 dt</td>
+            </tr>
+
+            <tr>
+                <td><i class="far fa-times-circle"></i></td>
+                <td><img src="images/mascara_ess.jpg" alt=""></td>
+                <td>Mascara</td>
+                <td>14.900 dt</td>
+                <td><input type="number" value="2"></td>
+                <td>29.800 dt</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- CART TOTAL -->
+<section id="cart-add" class="section-p1">
+    <div id="subtotal">
+        <h3>Cart Totals</h3>
+        <table>
+            <tr>
+                <td>Cart Subtotal</td>
+                <td>59.700 dt</td>
+            </tr>
+            <tr>
+                <td>Shipping</td>
+                <td>Free</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>59.700 dt</strong></td>
+            </tr>
+        </table>
+        <button class="normal">Proceed to checkout</button>
+    </div>
+</section>
+
+</body>
+</html>
