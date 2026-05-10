@@ -6,7 +6,50 @@
     <title>Contact Us - Make Up Online</title>
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
     <link rel="stylesheet" href="style_page.css">
-    <script src="script.js"></script>
+    <style>
+        #form-details form input,
+        #form-details form textarea {
+            transition: border-color .2s;
+        }
+        #form-details form input:focus,
+        #form-details form textarea:focus {
+            border-color: #e91e63;
+            outline: none;
+        }
+        #form-details form input.error,
+        #form-details form textarea.error {
+            border-color: #e91e63;
+            background: #fff5f8;
+        }
+        .form-alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .form-alert.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+            display: block;
+        }
+        .form-alert.error {
+            background: #fce4ec;
+            color: #c62828;
+            border: 1px solid #f48fb1;
+            display: block;
+        }
+        .btn-submit {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-submit:disabled {
+            opacity: .7;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 
@@ -60,10 +103,10 @@
 
     <!-- MAP -->
     <div class="map">
-        <iframe 
+        <iframe
             src="https://www.google.com/maps?q=Tunisia&output=embed"
-            style="border:0;" 
-            allowfullscreen="" 
+            style="border:0;"
+            allowfullscreen=""
             loading="lazy">
         </iframe>
     </div>
@@ -71,16 +114,86 @@
 
 <!-- CONTACT FORM -->
 <section id="form-details">
-    <form>
+    <form onsubmit="return false;">
         <span>LEAVE A MESSAGE</span>
         <h2>We love to hear from you</h2>
-        <input type="text" placeholder="Your Name">
-        <input type="email" placeholder="E-mail">
-        <input type="text" placeholder="Subject">
-        <textarea cols="30" rows="10" placeholder="Your Message"></textarea>
-        <button class="normal">Submit</button>
+
+        <div class="form-alert" id="contact-alert"></div>
+
+        <input type="text"  id="c-name"    placeholder="Your Name">
+        <input type="email" id="c-email"   placeholder="E-mail">
+        <input type="text"  id="c-subject" placeholder="Subject">
+        <textarea id="c-message" cols="30" rows="10" placeholder="Your Message"></textarea>
+
+        <button class="normal btn-submit" id="btn-submit" onclick="submitContact()">
+            Submit
+        </button>
     </form>
 </section>
 
+<script src="api/api.js"></script>
+<script src="script.js"></script>
+<script>
+async function submitContact() {
+    const name    = document.getElementById('c-name').value.trim();
+    const email   = document.getElementById('c-email').value.trim();
+    const subject = document.getElementById('c-subject').value.trim();
+    const message = document.getElementById('c-message').value.trim();
+    const alert   = document.getElementById('contact-alert');
+    const btn     = document.getElementById('btn-submit');
+
+    // Clear previous errors
+    ['c-name','c-email','c-message'].forEach(id => {
+        document.getElementById(id).classList.remove('error');
+    });
+    alert.className = 'form-alert';
+
+    // Validate
+    let valid = true;
+    if (!name) {
+        document.getElementById('c-name').classList.add('error');
+        valid = false;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('c-email').classList.add('error');
+        valid = false;
+    }
+    if (!message) {
+        document.getElementById('c-message').classList.add('error');
+        valid = false;
+    }
+    if (!valid) {
+        alert.className = 'form-alert error';
+        alert.textContent = '⚠ Please fill in all required fields correctly.';
+        return;
+    }
+
+    // Send
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    // Combine subject into message if provided
+    const fullMessage = subject ? `[${subject}] ${message}` : message;
+
+    const result = await api.sendContact(name, email, fullMessage);
+
+    if (result.success) {
+        alert.className = 'form-alert success';
+        alert.textContent = '✓ ' + result.message;
+        // Clear form
+        document.getElementById('c-name').value    = '';
+        document.getElementById('c-email').value   = '';
+        document.getElementById('c-subject').value = '';
+        document.getElementById('c-message').value = '';
+        btn.textContent = 'Submit';
+        btn.disabled = false;
+    } else {
+        alert.className = 'form-alert error';
+        alert.textContent = '⚠ ' + (result.error || 'Failed to send message. Please try again.');
+        btn.textContent = 'Submit';
+        btn.disabled = false;
+    }
+}
+</script>
 </body>
 </html>

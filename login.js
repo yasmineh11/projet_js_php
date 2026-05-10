@@ -3,7 +3,7 @@
 //  Make Up Online
 // =============================================
 
-const AUTH_ENDPOINT = "auth.php"; // Chemin vers le backend PHP
+const AUTH_ENDPOINT = "/api/auth.php";
 
 // ─────────────────────────────────────────────
 //  1. NAVIGATION ENTRE LES ONGLETS
@@ -41,12 +41,11 @@ function checkStrength(value) {
     if (!value) { wrap.style.display = "none"; return; }
     wrap.style.display = "block";
 
-    // Calcul du score (0 à 4)
     let score = 0;
-    if (value.length >= 8)           score++; // longueur suffisante
-    if (/[A-Z]/.test(value))         score++; // majuscule
-    if (/[0-9]/.test(value))         score++; // chiffre
-    if (/[^A-Za-z0-9]/.test(value))  score++; // caractère spécial
+    if (value.length >= 8)           score++;
+    if (/[A-Z]/.test(value))         score++;
+    if (/[0-9]/.test(value))         score++;
+    if (/[^A-Za-z0-9]/.test(value))  score++;
 
     const levels = [
         { label: "Too short",  color: "#e91e63", width: "15%"  },
@@ -90,7 +89,7 @@ function clearAllErrors() {
 function showAlert(id, type, msg) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.className = "auth-alert " + type; // "success" ou "error"
+    el.className = "auth-alert " + type + " show";
     el.textContent = (type === "success" ? "✓  " : "⚠  ") + msg;
 }
 
@@ -127,7 +126,6 @@ async function handleLogin() {
     const email = document.getElementById("login-email")?.value.trim() || "";
     const pw    = document.getElementById("login-pw")?.value            || "";
 
-    // Validation côté client
     if (!isValidEmail(email)) {
         setError("ig-login-email", "err-login-email", true);
         valid = false;
@@ -147,31 +145,30 @@ async function handleLogin() {
     setLoading("btn-login", "spinner-login", true);
 
     try {
-        // Envoi vers auth.php
-        const form = new FormData();
-        form.append("action",      "login");
-        form.append("email",       email);
-        form.append("password",    pw);
-        form.append("remember_me", document.getElementById("remember-me")?.checked ? "1" : "0");
+        const res  = await fetch(AUTH_ENDPOINT + "?action=login", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ email: email, password: pw })
+        });
 
-        const res  = await fetch(AUTH_ENDPOINT, { method: "POST", body: form });
         const data = await res.json();
+        console.log("Login response:", data);
 
         if (data.success) {
-            // Stocker l'utilisateur dans localStorage
             localStorage.setItem("makeup_user", JSON.stringify({
-                id: data.id, name: data.name, email: data.email
+                id:    data.user.id,
+                name:  data.user.name,
+                email: data.user.email
             }));
-            showAlert("login-alert", "success", "Welcome back, " + data.name + "! Redirecting…");
+            showAlert("login-alert", "success", "Welcome back, " + data.user.name + "! Redirecting…");
             setTimeout(() => { window.location.href = "html_page.html"; }, 1400);
         } else {
-            showAlert("login-alert", "error", data.message || "Invalid email or password.");
+            showAlert("login-alert", "error", data.error || "Invalid email or password.");
         }
 
     } catch (err) {
-        // auth.php inaccessible → mode démo localStorage
-        console.warn("auth.php not reachable — demo mode:", err);
-        demoLogin(email, pw);
+        console.error("Login error:", err);
+        showAlert("login-alert", "error", "Connection error. Please try again.");
     } finally {
         setLoading("btn-login", "spinner-login", false);
     }
@@ -191,7 +188,6 @@ async function handleSignup() {
     const pw2       = document.getElementById("signup-pw2")?.value              || "";
     const terms     = document.getElementById("signup-terms")?.checked;
 
-    // Validation de chaque champ
     if (!firstname) { setError("ig-firstname",    "err-firstname",    true);  valid = false; }
     else            { setError("ig-firstname",    "err-firstname",    false); }
 
@@ -201,11 +197,11 @@ async function handleSignup() {
     if (!isValidEmail(email)) { setError("ig-signup-email", "err-signup-email", true);  valid = false; }
     else                       { setError("ig-signup-email", "err-signup-email", false); }
 
-    if (!pw || pw.length < 8) { setError("ig-signup-pw",    "err-signup-pw",    true);  valid = false; }
-    else                       { setError("ig-signup-pw",    "err-signup-pw",    false); }
+    if (!pw || pw.length < 6) { setError("ig-signup-pw", "err-signup-pw", true);  valid = false; }
+    else                       { setError("ig-signup-pw", "err-signup-pw", false); }
 
-    if (!pw2 || pw !== pw2)   { setError("ig-signup-pw2",   "err-signup-pw2",   true);  valid = false; }
-    else                       { setError("ig-signup-pw2",   "err-signup-pw2",   false); }
+    if (!pw2 || pw !== pw2)   { setError("ig-signup-pw2", "err-signup-pw2", true);  valid = false; }
+    else                       { setError("ig-signup-pw2", "err-signup-pw2", false); }
 
     const termsErr = document.getElementById("err-terms");
     if (!terms) {
@@ -220,26 +216,34 @@ async function handleSignup() {
     setLoading("btn-signup", "spinner-signup", true);
 
     try {
-        const form = new FormData();
-        form.append("action",    "signup");
-        form.append("firstname", firstname);
-        form.append("lastname",  lastname);
-        form.append("email",     email);
-        form.append("password",  pw);
+        const res  = await fetch(AUTH_ENDPOINT + "?action=register", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+                name:     firstname + " " + lastname,
+                email:    email,
+                password: pw
+            })
+        });
 
-        const res  = await fetch(AUTH_ENDPOINT, { method: "POST", body: form });
         const data = await res.json();
+        console.log("Register response:", data);
 
         if (data.success) {
-            showAlert("signup-alert", "success", "Account created! Redirecting to login…");
-            setTimeout(() => switchTab("login"), 2000);
+            localStorage.setItem("makeup_user", JSON.stringify({
+                id:    data.user.id,
+                name:  data.user.name,
+                email: data.user.email
+            }));
+            showAlert("signup-alert", "success", "Account created! Redirecting…");
+            setTimeout(() => { window.location.href = "html_page.html"; }, 1800);
         } else {
-            showAlert("signup-alert", "error", data.message || "Registration failed.");
+            showAlert("signup-alert", "error", data.error || "Registration failed.");
         }
 
     } catch (err) {
-        console.warn("auth.php not reachable — demo mode:", err);
-        demoSignup(firstname, email, pw);
+        console.error("Signup error:", err);
+        showAlert("signup-alert", "error", "Connection error. Please try again.");
     } finally {
         setLoading("btn-signup", "spinner-signup", false);
     }
@@ -253,45 +257,9 @@ function socialLogin(provider) {
 }
 
 // ─────────────────────────────────────────────
-//  11. MODE DÉMO (sans PHP / Oracle)
-//  Stocke les comptes dans localStorage
-// ─────────────────────────────────────────────
-function demoLogin(email, pw) {
-    const accounts = JSON.parse(localStorage.getItem("makeup_accounts") || "[]");
-    const account  = accounts.find(a => a.email === email && a.pw === btoa(pw));
-
-    if (account) {
-        localStorage.setItem("makeup_user", JSON.stringify({
-            id: account.id, name: account.name, email: account.email
-        }));
-        showAlert("login-alert", "success", "Welcome back, " + account.name + "! (Demo) Redirecting…");
-    } else {
-        // Accepter n'importe quel identifiant en mode démo
-        const name = email.split("@")[0];
-        localStorage.setItem("makeup_user", JSON.stringify({ id: Date.now(), name, email }));
-        showAlert("login-alert", "success", "Welcome, " + name + "! (Demo mode) Redirecting…");
-    }
-    setTimeout(() => { window.location.href = "html_page.html"; }, 1400);
-}
-
-function demoSignup(firstname, email, pw) {
-    const accounts = JSON.parse(localStorage.getItem("makeup_accounts") || "[]");
-    if (accounts.find(a => a.email === email)) {
-        showAlert("signup-alert", "error", "This email is already registered.");
-        return;
-    }
-    accounts.push({ id: Date.now(), name: firstname, email, pw: btoa(pw) });
-    localStorage.setItem("makeup_accounts", JSON.stringify(accounts));
-    showAlert("signup-alert", "success", "Account created! (Demo mode) Redirecting to login…");
-    setTimeout(() => switchTab("login"), 2000);
-}
-
-// ─────────────────────────────────────────────
-//  12. INITIALISATION
+//  11. INITIALISATION
 // ─────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", function () {
-
-    // Touche Entrée pour soumettre
     document.addEventListener("keydown", function (e) {
         if (e.key !== "Enter") return;
         const active = document.querySelector(".auth-form.active");
