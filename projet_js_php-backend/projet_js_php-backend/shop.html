@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make Up Online</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link rel="stylesheet" href="style_page.css">
+    <style>
+        .cart-count {
+            background: #e91e63;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 11px;
+            padding: 1px 5px;
+            margin-left: 2px;
+            vertical-align: top;
+        }
+        .pro-container {
+            min-height: 200px;
+        }
+        .loading-msg {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+            font-size: 15px;
+            width: 100%;
+        }
+        .error-msg {
+            text-align: center;
+            padding: 40px 20px;
+            color: #e91e63;
+            font-size: 14px;
+            width: 100%;
+        }
+        .btn-add-cart {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #e91e63;
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(233,30,99,0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all .3s ease;
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<section id="header">
+    <h1>Make Up Online</h1>
+    <div>
+        <ul id="navbar">
+            <li><a href="html_page.html">Home</a></li>
+            <li><a class="active" href="shop.html">Shop</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i><span class="cart-count" id="cart-count">0</span></a></li>
+            <li><a href="login.html"><i class="fas fa-user"></i></a></li>
+        </ul>
+    </div>
+</section>
+
+<section id="page-header">
+    <h2>New Products!</h2>
+    <p>Save more money with our coupons!!</p>
+</section>
+
+<section id="Product1" class="section-p1">
+    <div class="pro-container" id="pro-container">
+        <div class="loading-msg"><i class="fas fa-spinner fa-spin"></i> Loading products…</div>
+    </div>
+</section>
+
+<section id="pagination" class="section-p1">
+    <a href="#">1</a>
+    <a href="#">2</a>
+    <a href="#"><i class="fas fa-long-arrow-alt-right"></i></a>
+</section>
+
+<section id="banner" class="section-m1">
+    <h4>Repair Services</h4>
+    <h2>Up to <span>60% Off</span> - All & accessories</h2>
+    <button class="normal">Explore more</button>
+</section>
+
+<section id="feature" class="section-p1">
+    <div class="fe-box">
+        <img class="img1" src="images/freeshipping.png" alt="">
+        <h6>Free Shipping</h6>
+    </div>
+    <div class="fe-box">
+        <img class="img1" src="images/orderonline.jpg" alt="">
+        <h6>Order Online</h6>
+    </div>
+    <div class="fe-box">
+        <img class="img1" src="images/savemon.jpg" alt="">
+        <h6>Save Money</h6>
+    </div>
+    <div class="fe-box">
+        <img class="img1" src="images/promotion.jpg" alt="">
+        <h6>Promotion</h6>
+    </div>
+    <div class="fe-box">
+        <img class="img1" src="images/happysale.png" alt="">
+        <h6>Happy Sale</h6>
+    </div>
+</section>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script src="api/api.js"></script>
+<script src="script.js"></script>
+<script>
+// ── Load products from database ──────────────────────
+async function loadProducts() {
+    const container = document.getElementById('pro-container');
+
+    try {
+        const products = await api.getProducts();
+
+        if (!products.length) {
+            container.innerHTML = '<div class="loading-msg">No products found.</div>';
+            return;
+        }
+
+        container.innerHTML = products.map(p => `
+            <div class="pro">
+                <img src="${p.image}" alt="${p.name}" onerror="this.src='images/placeholder.jpg'">
+                <div class="des">
+                    <span>${p.description || ''}</span>
+                    <h5>${p.name}</h5>
+                    <div class="star">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h4>${parseFloat(p.price).toFixed(3)} dt</h4>
+                </div>
+                <button class="btn-add-cart" onclick="addToCart(${p.id}, '${p.name}')">
+                    <i class="fas fa-shopping-cart cart"></i>
+                </button>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        container.innerHTML = '<div class="error-msg">Could not load products. Please try again.</div>';
+        console.error(err);
+    }
+}
+
+// ── Cart helpers ─────────────────────────────────────
+function addToCart(productId, productName) {
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existing = items.find(i => i.product_id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        items.push({ product_id: productId, quantity: 1 });
+    }
+    localStorage.setItem('cart', JSON.stringify(items));
+    updateCartCount();
+    showToast('🛒 ' + productName + ' added to cart!');
+}
+
+function updateCartCount() {
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    const count = items.reduce((sum, i) => sum + i.quantity, 0);
+    const badge = document.getElementById('cart-count');
+    if (badge) badge.textContent = count;
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ── Init ─────────────────────────────────────────────
+loadProducts();
+updateCartCount();
+</script>
+</body>
+</html>

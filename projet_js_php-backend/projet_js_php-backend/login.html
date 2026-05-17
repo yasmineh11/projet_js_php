@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up - Make Up Online</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link rel="stylesheet" href="style_page.css">
+    <style>
+        /* ── Auth Page Styles ── */
+        #auth-section {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            background: #fdf6f9;
+        }
+
+        .auth-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 40px rgba(233, 30, 99, 0.10);
+            width: 100%;
+            max-width: 440px;
+            padding: 44px 40px 36px;
+        }
+
+        /* Tab switcher */
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #f0e0e8;
+            margin-bottom: 32px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #aaa;
+            padding: 10px 0 12px;
+            letter-spacing: .5px;
+            transition: color .2s;
+            position: relative;
+        }
+
+        .auth-tab::after {
+            content: '';
+            display: block;
+            height: 3px;
+            border-radius: 2px;
+            background: #e91e63;
+            position: absolute;
+            bottom: -2px;
+            left: 0; right: 0;
+            transform: scaleX(0);
+            transition: transform .25s ease;
+        }
+
+        .auth-tab.active {
+            color: #e91e63;
+        }
+
+        .auth-tab.active::after {
+            transform: scaleX(1);
+        }
+
+        /* Forms */
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+            animation: fadeSlide .3s ease;
+        }
+
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-form h2 {
+            font-size: 22px;
+            color: #222;
+            margin: 0 0 6px;
+            font-weight: 700;
+        }
+
+        .auth-form p.subtitle {
+            font-size: 14px;
+            color: #888;
+            margin: 0 0 28px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+            letter-spacing: .3px;
+        }
+
+        .input-group .input-wrap {
+            position: relative;
+        }
+
+        .input-group .input-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            font-size: 14px;
+            pointer-events: none;
+            transition: color .2s;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px 12px 40px;
+            border: 1.5px solid #e8e0e5;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #222;
+            background: #fdf6f9;
+            outline: none;
+            transition: border-color .2s, background .2s;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            border-color: #e91e63;
+            background: #fff;
+        }
+
+        .input-group input:focus + i,
+        .input-group .input-wrap:focus-within i {
+            color: #e91e63;
+        }
+
+        /* icon is AFTER input in DOM for the sibling trick */
+        .input-group .input-wrap i { pointer-events: none; }
+
+        /* password toggle */
+        .toggle-pw {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #bbb;
+            font-size: 14px;
+            pointer-events: all !important;
+            transition: color .2s;
+        }
+
+        .toggle-pw:hover { color: #e91e63; }
+
+        /* error hints */
+        .field-error {
+            font-size: 12px;
+            color: #e91e63;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .input-group.error input {
+            border-color: #e91e63;
+            background: #fff5f8;
+        }
+
+        .input-group.error .field-error {
+            display: block;
+        }
+
+        /* success */
+        .input-group.success input {
+            border-color: #4caf50;
+        }
+
+        /* Strength bar */
+        #strength-bar-wrap {
+            margin-top: 8px;
+            display: none;
+        }
+
+        #strength-bar-wrap .bar-track {
+            height: 4px;
+            border-radius: 2px;
+            background: #f0e0e8;
+            overflow: hidden;
+        }
+
+        #strength-bar-wrap .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width .3s, background .3s;
+        }
+
+        #strength-bar-wrap .bar-label {
+            font-size: 11px;
+            margin-top: 4px;
+            color: #888;
+        }
+
+        /* Remember / forgot */
+        .auth-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .auth-options label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .auth-options input[type="checkbox"] {
+            accent-color: #e91e63;
+            width: 14px; height: 14px;
+        }
+
+        .auth-options a {
+            color: #e91e63;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-options a:hover { text-decoration: underline; }
+
+        /* Submit button */
+        .btn-auth {
+            width: 100%;
+            padding: 13px;
+            background: #e91e63;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: .5px;
+            transition: background .2s, transform .1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-auth:hover { background: #c2185b; }
+        .btn-auth:active { transform: scale(.98); }
+
+        .btn-auth .spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+            position: absolute;
+            right: 18px; top: 50%;
+            transform: translateY(-50%);
+        }
+
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        /* Divider */
+        .divider {
+            text-align: center;
+            color: #bbb;
+            font-size: 13px;
+            margin: 22px 0;
+            position: relative;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            display: inline-block;
+            height: 1px;
+            background: #f0e0e8;
+            vertical-align: middle;
+            width: 38%;
+        }
+
+        .divider::before { margin-right: 10px; }
+        .divider::after  { margin-left: 10px; }
+
+        /* Social buttons */
+        .social-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-social {
+            flex: 1;
+            padding: 11px;
+            border: 1.5px solid #e8e0e5;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: border-color .2s, background .2s;
+        }
+
+        .btn-social:hover {
+            border-color: #e91e63;
+            background: #fff5f8;
+        }
+
+        .btn-social img {
+            width: 16px; height: 16px;
+        }
+
+        /* Alert banners */
+        .auth-alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-alert.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .auth-alert.error {
+            background: #fce4ec;
+            color: #c62828;
+            border: 1px solid #f48fb1;
+        }
+
+        .auth-alert.show { display: flex; }
+
+        /* Terms checkbox */
+        .terms-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .terms-check input {
+            margin-top: 2px;
+            accent-color: #e91e63;
+            flex-shrink: 0;
+        }
+
+        .terms-check a { color: #e91e63; text-decoration: none; font-weight: 600; }
+
+        /* Already have / need account */
+        .switch-link {
+            text-align: center;
+            margin-top: 22px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .switch-link button {
+            background: none;
+            border: none;
+            color: #e91e63;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .switch-link button:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-card { padding: 30px 22px 26px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<section id="header">
+    <h1>Make Up Online</h1>
+    <div>
+        <ul id="navbar">
+            <li><a href="html_page.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i></a></li>
+            <li><a href="login.html"><i class="fas fa-user"></i></a></li>
+        </ul>
+    </div>
+</section>
+
+<!-- AUTH SECTION -->
+<section id="auth-section">
+    <div class="auth-card">
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+            <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+        </div>
+
+        <!-- ── LOGIN FORM ── -->
+        <div class="auth-form active" id="form-login">
+            <h2>Welcome back</h2>
+            <p class="subtitle">Sign in to your account to continue shopping.</p>
+
+            <div class="auth-alert" id="login-alert"></div>
+
+            <div class="input-group" id="ig-login-email">
+                <label for="login-email">Email address</label>
+                <div class="input-wrap">
+                    <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <span class="field-error" id="err-login-email">Please enter a valid email.</span>
+            </div>
+
+            <div class="input-group" id="ig-login-pw">
+                <label for="login-pw">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="login-pw" placeholder="Your password" autocomplete="current-password">
+                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-eye toggle-pw" id="toggle-login-pw" onclick="togglePw('login-pw','toggle-login-pw')"></i>
+                </div>
+                <span class="field-error" id="err-login-pw">Password is required.</span>
+            </div>
+
+            <div class="auth-options">
+                <label>
+                    <input type="checkbox" id="remember-me"> Remember me
+                </label>
+                <a href="#">Forgot password?</a>
+            </div>
+
+            <button class="btn-auth" id="btn-login" onclick="handleLogin()">
+                Sign In
+                <span class="spinner" id="spinner-login"></span>
+            </button>
+
+            <div class="divider">or continue with</div>
+
+            <div class="social-btns">
+                <button class="btn-social" onclick="socialLogin('Google')">
+                    <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Google
+                </button>
+                <button class="btn-social" onclick="socialLogin('Facebook')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+                    Facebook
+                </button>
+            </div>
+
+            <div class="switch-link">
+                Don't have an account? <button onclick="switchTab('signup')">Sign up free</button>
+            </div>
+        </div>
+
+        <!-- ── SIGNUP FORM ── -->
+        <div class="auth-form" id="form-signup">
+            <h2>Create account ✨</h2>
+            <p class="subtitle">Join us and discover exclusive beauty deals.</p>
+
+            <div class="auth-alert" id="signup-alert"></div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="input-group" id="ig-firstname" style="flex:1;">
+                    <label for="signup-firstname">First name</label>
+                    <div class="input-wrap">
+                        <input type="text" id="signup-firstname" placeholder="Yasmine" autocomplete="given-name">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="field-error" id="err-firstname">Required.</span>
+                </div>
+                <div class="input-group" id="ig-lastname" style="flex:1;">
+                    <label for="signup-lastname">Last name</label>
+                    <div class="input-wrap">
+                        <input type="text" id="signup-lastname" placeholder="Hamza" autocomplete="family-name">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="field-error" id="err-lastname">Required.</span>
+                </div>
+            </div>
+
+            <div class="input-group" id="ig-signup-email">
+                <label for="signup-email">Email address</label>
+                <div class="input-wrap">
+                    <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <span class="field-error" id="err-signup-email">Please enter a valid email.</span>
+            </div>
+
+            <div class="input-group" id="ig-signup-pw">
+                <label for="signup-pw">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="signup-pw" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkStrength(this.value)">
+                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-eye toggle-pw" id="toggle-signup-pw" onclick="togglePw('signup-pw','toggle-signup-pw')"></i>
+                </div>
+                <div id="strength-bar-wrap">
+                    <div class="bar-track"><div class="bar-fill" id="strength-fill"></div></div>
+                    <div class="bar-label" id="strength-label"></div>
+                </div>
+                <span class="field-error" id="err-signup-pw">Min. 8 characters required.</span>
+            </div>
+
+            <div class="input-group" id="ig-signup-pw2">
+                <label for="signup-pw2">Confirm password</label>
+                <div class="input-wrap">
+                    <input type="password" id="signup-pw2" placeholder="Repeat password" autocomplete="new-password">
+                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-eye toggle-pw" id="toggle-signup-pw2" onclick="togglePw('signup-pw2','toggle-signup-pw2')"></i>
+                </div>
+                <span class="field-error" id="err-signup-pw2">Passwords do not match.</span>
+            </div>
+
+            <label class="terms-check" id="ig-terms">
+                <input type="checkbox" id="signup-terms">
+                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </label>
+            <span class="field-error" id="err-terms" style="margin-top:-12px; margin-bottom:14px; display:none;">You must accept the terms.</span>
+
+            <button class="btn-auth" id="btn-signup" onclick="handleSignup()">
+                Create Account
+                <span class="spinner" id="spinner-signup"></span>
+            </button>
+
+            <div class="switch-link">
+                Already have an account? <button onclick="switchTab('login')">Sign in</button>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="login.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

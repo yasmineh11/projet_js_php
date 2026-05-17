@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Make Up Online</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
+    <link rel="stylesheet" href="style_page.css">
+    <style>
+        #cart table thead tr { background: #fdf6f9; }
+        #cart table img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; }
+        #cart table input[type="number"] {
+            width: 60px; padding: 6px; border: 1.5px solid #e8e0e5;
+            border-radius: 6px; text-align: center; font-size: 14px;
+        }
+        #cart table .remove-btn {
+            cursor: pointer; color: #e91e63; font-size: 20px;
+            background: none; border: none;
+        }
+        #cart table .remove-btn:hover { color: #c2185b; }
+        .empty-cart {
+            text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px;
+        }
+        .empty-cart i { font-size: 48px; display: block; margin-bottom: 14px; color: #f0c0d0; }
+        .empty-cart a { color: #e91e63; font-weight: 700; text-decoration: none; }
+
+        .btn-checkout {
+            background: #e91e63; color: #fff; border: none; padding: 13px 28px;
+            border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+            transition: background .2s; width: 100%; margin-top: 10px;
+        }
+        .btn-checkout:hover { background: #c2185b; }
+        .btn-checkout:disabled { background: #ccc; cursor: not-allowed; }
+
+        .order-success {
+            background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7;
+            border-radius: 10px; padding: 18px 20px; font-size: 14px;
+            font-weight: 600; display: none; margin-top: 16px; text-align: center;
+        }
+        .order-success.show { display: block; }
+        .order-error {
+            background: #fce4ec; color: #c62828; border: 1px solid #f48fb1;
+            border-radius: 10px; padding: 14px 16px; font-size: 13px;
+            display: none; margin-top: 12px;
+        }
+        .order-error.show { display: block; }
+
+        .cart-count {
+            background: #e91e63; color: #fff; border-radius: 50%;
+            font-size: 11px; padding: 1px 5px; margin-left: 2px; vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<section id="header">
+    <h1>Make Up Online</h1>
+    <div>
+        <ul id="navbar">
+            <li><a href="html_page.html">Home</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a class="active" href="cart.html"><i class="fas fa-shopping-cart"></i><span class="cart-count" id="cart-count">0</span></a></li>
+            <li><a href="login.html"><i class="fas fa-user"></i></a></li>
+        </ul>
+    </div>
+</section>
+
+<!-- PAGE HEADER -->
+<section id="page-header">
+    <h2>#cart</h2>
+    <p>Your selected products</p>
+</section>
+
+<!-- CART TABLE -->
+<section id="cart" class="section-p1">
+    <table width="100%">
+        <thead>
+            <tr>
+                <td>Remove</td>
+                <td>Image</td>
+                <td>Product</td>
+                <td>Price</td>
+                <td>Quantity</td>
+                <td>Subtotal</td>
+            </tr>
+        </thead>
+        <tbody id="cart-body">
+            <tr>
+                <td colspan="6">
+                    <div class="empty-cart">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading your cart…
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- CART TOTAL -->
+<div style="display:flex; justify-content:flex-end; padding:40px 80px;">
+    <div style="width:50%; border:1px solid #e2e9e1; padding:30px; background:#fff;">
+        <h3 style="font-size:18px; margin-bottom:16px; color:#222;">Cart Totals</h3>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+            <tr>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px; width:50%;">Cart Subtotal</td>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px; width:50%;" id="summary-subtotal">0.000 dt</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px;">Shipping</td>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px;">Free</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px;"><strong>Total</strong></td>
+                <td style="border:1px solid #e2e9e1; padding:10px; font-size:13px;"><strong id="summary-total">0.000 dt</strong></td>
+            </tr>
+        </table>
+
+        <button class="btn-checkout" id="btn-checkout" onclick="checkout()">
+            Proceed to Checkout
+        </button>
+        <div class="order-error" id="order-error"></div>
+        <div class="order-success" id="order-success"></div>
+    </div>
+</div>
+
+<script src="api/api.js"></script>
+<script src="script.js"></script>
+<script>
+let productCache = {};
+
+async function loadCart() {
+    const cartBody = document.getElementById('cart-body');
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    if (!items.length) {
+        cartBody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    Your cart is empty. <a href="shop.html">Continue shopping</a>
+                </div>
+            </td></tr>`;
+        updateSummary([]);
+        return;
+    }
+
+    const allProducts = await api.getProducts();
+    allProducts.forEach(p => productCache[p.id] = p);
+    renderCart(items);
+}
+
+function renderCart(items) {
+    const cartBody = document.getElementById('cart-body');
+
+    const rows = items.map(item => {
+        const p = productCache[item.product_id];
+        if (!p) return '';
+        const subtotal = (parseFloat(p.price) * item.quantity).toFixed(3);
+        return `
+            <tr id="cart-row-${p.id}">
+                <td>
+                    <button class="remove-btn" onclick="removeItem(${p.id})">
+                        <i class="far fa-times-circle"></i>
+                    </button>
+                </td>
+                <td><img src="${p.image}" alt="${p.name}" onerror="this.src=''"></td>
+                <td>${p.name}<br><small style="color:#aaa">${p.description || ''}</small></td>
+                <td>${parseFloat(p.price).toFixed(3)} dt</td>
+                <td>
+                    <input type="number" min="1" value="${item.quantity}"
+                        onchange="updateQty(${p.id}, this.value)">
+                </td>
+                <td id="subtotal-${p.id}">${subtotal} dt</td>
+            </tr>`;
+    }).join('');
+
+    cartBody.innerHTML = rows || `<tr><td colspan="6"><div class="empty-cart">
+        <i class="fas fa-shopping-cart"></i>
+        Your cart is empty. <a href="shop.html">Continue shopping</a>
+    </div></td></tr>`;
+
+    updateSummary(items);
+    updateCartCount();
+}
+
+function updateQty(productId, newQty) {
+    newQty = Math.max(1, parseInt(newQty) || 1);
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    const item = items.find(i => i.product_id === productId);
+    if (item) {
+        item.quantity = newQty;
+        localStorage.setItem('cart', JSON.stringify(items));
+        const p = productCache[productId];
+        if (p) {
+            document.getElementById('subtotal-' + productId).textContent =
+                (parseFloat(p.price) * newQty).toFixed(3) + ' dt';
+        }
+        updateSummary(items);
+        updateCartCount();
+    }
+}
+
+function removeItem(productId) {
+    let items = JSON.parse(localStorage.getItem('cart') || '[]');
+    items = items.filter(i => i.product_id !== productId);
+    localStorage.setItem('cart', JSON.stringify(items));
+    document.getElementById('cart-row-' + productId)?.remove();
+    updateSummary(items);
+    updateCartCount();
+
+    if (!items.length) {
+        document.getElementById('cart-body').innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    Your cart is empty. <a href="shop.html">Continue shopping</a>
+                </div>
+            </td></tr>`;
+    }
+}
+
+function updateSummary(items) {
+    let total = 0;
+    items.forEach(item => {
+        const p = productCache[item.product_id];
+        if (p) total += parseFloat(p.price) * item.quantity;
+    });
+    const totalStr = total.toFixed(3) + ' dt';
+    document.getElementById('summary-subtotal').textContent = totalStr;
+    document.getElementById('summary-total').textContent    = totalStr;
+}
+
+function updateCartCount() {
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    const count = items.reduce((sum, i) => sum + i.quantity, 0);
+    const badge = document.getElementById('cart-count');
+    if (badge) badge.textContent = count;
+}
+
+async function checkout() {
+    const user     = JSON.parse(localStorage.getItem('makeup_user') || 'null');
+    const errorEl  = document.getElementById('order-error');
+    const successEl= document.getElementById('order-success');
+    errorEl.className   = 'order-error';
+    successEl.className = 'order-success';
+
+    if (!user) {
+        errorEl.textContent = '⚠ You must be logged in to checkout. Redirecting to login…';
+        errorEl.className = 'order-error show';
+        setTimeout(() => window.location.href = 'login.html', 2000);
+        return;
+    }
+
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    if (!items.length) {
+        errorEl.textContent = '⚠ Your cart is empty.';
+        errorEl.className = 'order-error show';
+        return;
+    }
+
+    const btn = document.getElementById('btn-checkout');
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+
+    const result = await api.placeOrder(items);
+
+    if (result.success) {
+        localStorage.removeItem('cart');
+        updateCartCount();
+        successEl.innerHTML = `✓ Order #${result.order_id} placed successfully!<br>
+            Total: <strong>${parseFloat(result.total).toFixed(3)} dt</strong><br><br>
+            <a href="shop.html" style="color:#2e7d32">Continue shopping →</a>`;
+        successEl.className = 'order-success show';
+        document.getElementById('cart-body').innerHTML = `
+            <tr><td colspan="6"><div class="empty-cart">
+                <i class="fas fa-check-circle" style="color:#4caf50"></i>
+                Order placed! Thank you.
+            </div></td></tr>`;
+        btn.style.display = 'none';
+    } else {
+        errorEl.textContent = '⚠ ' + (result.error || 'Checkout failed. Please try again.');
+        errorEl.className = 'order-error show';
+        btn.disabled = false;
+        btn.textContent = 'Proceed to Checkout';
+    }
+}
+
+loadCart();
+</script>
+</body>
+</html>
